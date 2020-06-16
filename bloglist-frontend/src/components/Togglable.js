@@ -10,10 +10,14 @@ const Togglable = (props) => {
     setVisible(!visible)
   }
 
+  const buttonStyle = {
+    marginBottom: 10,
+  }
+
   return (
     <div>
       <div style={hideWhenVisible}>
-        <button onClick={toggleVisiblity}>{props.buttonLabel}</button>
+        <button style={buttonStyle} onClick={toggleVisiblity}>{props.buttonLabel}</button>
       </div>
       <div style={showWhenVisible}>
         {props.children}

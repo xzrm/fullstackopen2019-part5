@@ -5,6 +5,7 @@ import PropTypes from 'prop-types'
 const Blog = ({ blog, handleBlogChange, handleBlogRemove, user }) => {
   const [visible, setVisible] = useState(false)
 
+
   const showWhenVisible = { display: visible ? '' : 'none' }
 
   const toggleVisiblity = () => {
@@ -51,7 +52,6 @@ const Blog = ({ blog, handleBlogChange, handleBlogRemove, user }) => {
         <div style={toggleRemoveButton}>
           <button onClick={() => handleBlogRemove(blog)}>remove</button>
         </div>
-
       </div>
     </div>
   )

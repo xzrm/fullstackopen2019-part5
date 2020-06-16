@@ -5,13 +5,14 @@ import Blog from './components/Blog'
 import Notification from './components/Notification'
 import Togglable from './components/Togglable'
 import BlogForm from './components/BlogForm'
+import LoginForm from './components/LoginForm'
 import './App.css'
 import { useField } from './hooks'
 
 
 
 const compareLikes = (a, b) => {
-  return a.likes - b.likes
+  return b.likes - a.likes
 }
 
 
@@ -75,11 +76,9 @@ const App = () => {
     password.reset()
   }
 
-
   const handleBlogChange = (updatedBlog) => {
     setBlogs((blogs.map(blog =>
-      blog.id !== updatedBlog.id ? blog : updatedBlog)
-    )
+      blog.id !== updatedBlog.id ? blog : updatedBlog))
       .sort(compareLikes)
     )
   }
@@ -87,8 +86,7 @@ const App = () => {
   const handleBlogRemove = async (blogToDelete) => {
     if (window.confirm(`remove blog ${blogToDelete.title} by ${blogToDelete.author}?`)) {
       await blogService.remove(blogToDelete.id)
-      setBlogs((blogs.filter(blog => blog.id !== blogToDelete.id))
-        .sort(compareLikes))
+      setBlogs(blogs.filter(blog => blog.id !== blogToDelete.id))
     }
   }
 
@@ -106,19 +104,17 @@ const App = () => {
   const addBlog = async (event) => {
     event.preventDefault()
 
-
-    const blogObject = {
+    const newBlog = {
       title: title.attr.value,
       author: author.attr.value,
       url: url.attr.value
     }
 
     try {
-      const data = await blogService.create(blogObject)
-      setBlogs((blogs.concat(data)).sort(compareLikes))
-      blogs.map(blog => console.log(blog))
+      const addedBlog = await blogService.create(newBlog)
+      setBlogs(blogs.concat(addedBlog))
       setClassName('notification')
-      setMessage(`a new blog ${title.attr.value} by ${author.attr} added: username: ${user.username}`)
+      setMessage(`a new blog ${addedBlog.title} by ${addedBlog.author} added: username: ${user.username}`)
       setTimeout(() => {
         setMessage(null)
       }, 2000)
@@ -130,6 +126,29 @@ const App = () => {
     url.reset()
   }
 
+  /* There are several ways of solving the problem of displaying blogs.
+  Adding a blog in the backend saves the user.id. Mongoose method .populate()
+  works only for GET requests therefore the new/updated list of blogs
+  has to be request with GET request after it was updated.
+
+  The advantage of this solution is that the frontend displays the current
+  version of blogs stored in db. Also error handling is easier.
+  The downside is that when the list of blogs increases, it would take
+  more time to receive all data from the server.
+
+  Other possible solutions are discussed:
+  https://dev.to/lenmorld/what-is-the-standard-way-to-keep-ui-state-and-backend-state-synced-during-updates-react-and-node-plm
+
+  Additional option is to remove populate and update the user directly
+  at the backend thus       const blog = new Blog({
+                            title: body.title,
+                            author: body.author,
+                            url: body.url,
+                            likes: body.likes === undefined ? 0 : body.likes,
+                            user: user //<--- instead of user: user._id
+                            })
+  see the backend part-4.
+  */
   const displayBlogs = () => {
     blogService
       .getAll()
@@ -147,34 +166,10 @@ const App = () => {
       ))
   }
 
-  const loginForm = () => (
-    <div>
-      <h2>log in to application</h2>
-      <Notification message={message} className={className} />
-      <form onSubmit={handleLogin} className='login'>
-        <div>
-          username
-          <input { ...username.attr } />
-        </div>
-        <div>
-          password
-          <input {...password.attr } />
-        </div>
-        <button type="submit">login</button>
-      </form>
-    </div>
-  )
 
   const blogForm = () => (
     <div>
-      <h2>blogs</h2>
-      <Notification message={message} className={className} />
-      <p>{user.name} is logged in</p>
-      <button onClick={handleLogout}>
-        logout
-      </button>
-
-      <Togglable buttonLabel="new note">
+      <Togglable buttonLabel="new blog">
         <BlogForm
           handleAddBlog={addBlog}
           title={title.attr}
@@ -182,16 +177,33 @@ const App = () => {
           url={url.attr}
         />
       </Togglable>
-      <div>{displayBlogs()}</div>
-
     </div>
   )
 
   return (
     <div>
-      {user === null ?
-        loginForm() :
-        blogForm()
+      {user === null
+        ? <h2>log in to application</h2>
+        : <h2>blogs</h2>}
+
+      <Notification message={message} className={className} />
+      {user !== null &&
+        <p>{user.name} is logged in
+          <button onClick={handleLogout}>logout</button>
+        </p>
+      }
+
+      {user === null
+        ? <LoginForm handleLogin={handleLogin}
+          username={username.attr}
+          password={password.attr}
+        />
+        : blogForm()
+      }
+
+      {user === null
+        ? <div></div>
+        : displayBlogs()
       }
     </div>
   )
