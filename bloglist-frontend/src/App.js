@@ -79,7 +79,6 @@ const App = () => {
   const handleBlogChange = (updatedBlog) => {
     setBlogs((blogs.map(blog =>
       blog.id !== updatedBlog.id ? blog : updatedBlog))
-      .sort(compareLikes)
     )
   }
 
